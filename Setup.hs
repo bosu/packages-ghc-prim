@@ -16,6 +16,7 @@ import System.Cmd
 import System.FilePath
 import System.Exit
 import System.Directory
+import System.Environment (getEnv)
 
 main :: IO ()
 main = do let hooks = simpleUserHooks {
@@ -23,8 +24,6 @@ main = do let hooks = simpleUserHooks {
                           $ regHook simpleUserHooks,
                   buildHook = build_primitive_sources
                             $ buildHook simpleUserHooks,
-                  makefileHook = build_primitive_sources
-                               $ makefileHook simpleUserHooks,
                   haddockHook = addPrimModuleForHaddock
                               $ build_primitive_sources
                               $ haddockHook simpleUserHooks }
@@ -61,10 +60,9 @@ addPrimModuleToPD pd =
 build_primitive_sources :: Hook a -> Hook a
 build_primitive_sources f pd lbi uhs x
  = do when (compilerFlavor (compiler lbi) == GHC) $ do
-          let genprimopcode = joinPath ["..", "..", "utils",
-                                        "genprimopcode", "genprimopcode"]
-              primops = joinPath ["..", "..", "compiler", "prelude",
-                                  "primops.txt"]
+          ghcdir <- getEnv "GHC_BUILD_DIR"
+          let genprimopcode = ghcdir ++ "/inplace/bin/genprimopcode"
+              primops = ghcdir ++ "/compiler/stage2/build/primops.txt"
               primhs = joinPath ["GHC", "Prim.hs"]
               primopwrappers = joinPath ["GHC", "PrimopWrappers.hs"]
               primhs_tmp = addExtension primhs "tmp"
